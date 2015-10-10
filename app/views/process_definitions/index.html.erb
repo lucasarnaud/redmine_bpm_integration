@@ -23,8 +23,8 @@
 <script type="text/javascript">
 function performUploadClick(node)
 {
-   document.getElementById('bpm_process_definition_upload').onchange = function() {
-     document.upload_form.submit();
+   document.getElementById('new_bpm_integration_process_definition').onchange = function() {
+     document.getElementById('new_bpm_integration_process_definition').submit();
    };
 
    var evt = document.createEvent("MouseEvents");
@@ -34,9 +34,9 @@ function performUploadClick(node)
 </script>
 
 <div class="contextual">
-  <%= form_tag process_definitions_path, name: "upload_form", multipart: true do %>
-    <%= file_field_tag('bpm_process_definition[upload]', style: 'display: none;') %>
-    <%= link_to l('new_process'), '#', class:'icon icon-add', onclick: 'performUploadClick(document.getElementById("bpm_process_definition_upload"));' %>
+  <%= form_for BpmIntegration::ProcessDefinition.new, name: "upload_form", multipart: true do |f| %>
+    <%= f.file_field :upload, style: 'display: none;' %>
+    <%= link_to l('new_process'), '#', class:'icon icon-add', onclick: 'performUploadClick(document.getElementById("bpm_integration_process_definition_upload"));' %>
     <%= submit_tag('', style: 'display: none;')  %>
   <% end %>
 </div>
@@ -56,11 +56,11 @@ function performUploadClick(node)
 
     <% @process_definitions.each do |process| %>
       <tr>
-        <td><%= link_to process.name, process_definition_path(process) %></td>
+        <td><%= link_to process.name, bpm_integration_process_definition_path(process) %></td>
         <td><%= process.description %></td>
         <td><%= process.try(&:tracker_process_definition).try(&:tracker).try(&:name) %></td>
         <td><%= process.version %></td>
-        <td><%= link_to t(:button_edit), edit_process_definition_path(process) %></td>
+        <td><%= link_to t(:button_edit), edit_bpm_integration_process_definition_path(process) %></td>
       </tr>
     <% end %>
   </table>

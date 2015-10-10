@@ -12,24 +12,14 @@ class ProcessDefinitionsController < BpmController
 
   def edit
     @process_definition = BpmIntegration::ProcessDefinition.find(params[:id])
-    @process_definition.tracker_process_definition = BpmIntegration::TrackerProcessDefinition.find(@process_definition.tracker_process_definition_id) unless @process_definition.tracker_process_definition_id.blank?
-    @process_definition
+
+    # Não entendi porque essa key fica no tracker_process_definition, se a relação é N-1
+    @process_definition.tracker_process_definition = BpmIntegration::TrackerProcessDefinition.new(process_definition_key: @process_definition.key) unless @process_definition.tracker_process_definition
   end
 
   def update
-    @process_definition = BpmIntegration::ProcessDefinition.find(params.require(:id))
-    if @process_definition.tracker_process_definition_id.blank?
-      @process_definition.tracker_process_definition ||= BpmIntegration::TrackerProcessDefinition.where(process_definition_key: @process_definition.key).first_or_initialize
-    end
-    @process_definition.tracker_process_definition.update_attributes(
-      params.require(:bpm_integration_process_definition).require(:tracker_process_definition).permit(:tracker_id)
-    )
-
-    @process_definition.form_field_definitions.each do |ffd|
-      ffd.custom_field_id = params[:bpm_integration_process_definition][:form_field_definitions][ffd.id.to_s]
-    end
-
-    @process_definition.save!
+    @process_definition = BpmIntegration::ProcessDefinition.find(params[:id])
+    @process_definition.update_attributes!(safe_params)
 
     flash[:notice] = t(:notice_successful_update)
     redirect_to action: :index
@@ -37,7 +27,7 @@ class ProcessDefinitionsController < BpmController
 
   def create
     begin
-      process_data = params[:bpm_process_definition][:upload].tempfile
+      process_data = params[:bpm_integration_process_definition][:upload].tempfile
       response = BpmProcessDefinitionService.deploy_process(process_data)
       if !response.blank? && response.code == 201
         SyncProcessDefinitionsJob.perform_now
@@ -56,4 +46,9 @@ class ProcessDefinitionsController < BpmController
     send_data process_image, :type => 'image/png',:disposition => 'inline'
   end
 
+  private
+
+  def safe_params
+    params.require(:bpm_integration_process_definition).permit(tracker_process_definition_attributes: [:tracker_id, :process_definition_key], form_field_definitions_attributes: [:custom_field_id, :id])
+  end
 end
